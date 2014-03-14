@@ -38,6 +38,11 @@ namespace NPoco
         int Delete<T>(object pocoOrPrimaryKey);
         void Save<T>(object poco);
         bool IsNew<T>(object poco);
+        DataTable ExecuteTable(Sql sql);
+        DataTable ExecuteTable(string sql, params object[] args);
+        DataRow ExecuteRow(string sql, params object[] args);
+        DataRow ExecuteRow(Sql sql);
+        void Upsert(object poco);
     }
 
     public interface IDatabaseConfig

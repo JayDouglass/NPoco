@@ -813,6 +813,63 @@ namespace NPoco
             }
         }
 
+        public DataRow ExecuteRow(Sql sql)
+        {
+            var table = ExecuteTable(sql);
+            if (table.Rows.Count > 1) throw new InvalidOperationException("More than one row was returned");
+            return table.Rows.Count == 1 ? table.Rows[0] : null;
+        }
+
+        public DataRow ExecuteRow(string sql, params object[] args)
+        {
+            return ExecuteRow(new Sql(sql, args));
+        }
+
+        public DataTable ExecuteTable(string sql, params object[] args)
+        {
+            return ExecuteTable(new Sql(sql, args));
+        }
+
+        public DataTable ExecuteTable(Sql Sql)
+        {
+            var sql = Sql.SQL;
+            var args = Sql.Arguments;
+
+            try
+            {
+                OpenSharedConnectionInternal();
+                using (var cmd = CreateCommand(_sharedConnection, sql, args))
+                {
+                    IDataReader r;
+                    try
+                    {
+                        r = ExecuteReaderHelper(cmd);
+                    }
+                    catch (Exception x)
+                    {
+                        OnException(x);
+                        throw;
+                    }
+
+                    using (r)
+                    {
+                        var table = new DataTable();
+                        table.Load(r);
+                        return table;
+                    }
+                }
+            }
+            finally
+            {
+                CloseSharedConnectionInternal();
+            }
+        }
+
+        public void Upsert(object poco)
+        {
+            if (Update(poco) == 0) Insert(poco);
+        }
+
         // Multi Fetch
         public List<TRet> Fetch<T1, T2, TRet>(Func<T1, T2, TRet> cb, string sql, params object[] args) { return Query(cb, sql, args).ToList(); }
         public List<TRet> Fetch<T1, T2, T3, TRet>(Func<T1, T2, T3, TRet> cb, string sql, params object[] args) { return Query(cb, sql, args).ToList(); }
